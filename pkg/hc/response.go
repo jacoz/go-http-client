@@ -1,6 +1,7 @@
 package hc
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 )
@@ -45,6 +46,13 @@ func (r *response) BadRequest() bool {
 // NotFound is a shortcut to check if the response has the status 404
 func (r *response) NotFound() bool {
 	return r.response.StatusCode == http.StatusNotFound
+}
+
+// Debug returns the response object as string
+func (r *response) Debug() string {
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(r.response.Body)
+	return buf.String()
 }
 
 // Get returns the response object
