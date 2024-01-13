@@ -2,11 +2,12 @@ package hc
 
 import (
 	"errors"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestResponse_UnmarshalJson(t *testing.T) {
@@ -252,6 +253,32 @@ func TestResponse_NotFound(t *testing.T) {
 			}
 			got := res.NotFound()
 			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestResponse_Debug(t *testing.T) {
+	var tests = []struct {
+		name  string
+		input *http.Response
+		want  string
+	}{
+		{
+			"object",
+			&http.Response{
+				Body: io.NopCloser(strings.NewReader(`{"foo":"bar"}`)),
+			},
+			`{"foo":"bar"}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			res := response{
+				response: tt.input,
+			}
+
+			assert.Equal(t, tt.want, res.Debug())
 		})
 	}
 }
