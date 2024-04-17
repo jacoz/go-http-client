@@ -3,6 +3,7 @@ package hc
 import (
 	"bytes"
 	"encoding/json"
+	"encoding/xml"
 	"net/http"
 )
 
@@ -16,6 +17,14 @@ func (r *response) UnmarshalJson(v any) error {
 	defer body.Close()
 
 	return json.NewDecoder(body).Decode(&v)
+}
+
+// UnmarshalXml decodes a xml response into a struct
+func (r *response) UnmarshalXml(v any) error {
+	body := r.Get().Body
+	defer body.Close()
+
+	return xml.Unmarshal(r.Debug(), &v)
 }
 
 // StatusCode returns the response status code
@@ -48,11 +57,11 @@ func (r *response) NotFound() bool {
 	return r.response.StatusCode == http.StatusNotFound
 }
 
-// Debug returns the response object as string
-func (r *response) Debug() string {
+// Debug returns the response object
+func (r *response) Debug() []byte {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(r.response.Body)
-	return buf.String()
+	return buf.Bytes()
 }
 
 // Get returns the response object
