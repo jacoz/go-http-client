@@ -1,6 +1,7 @@
 package hc
 
 import (
+	"encoding/xml"
 	"errors"
 	"io"
 	"net/http"
@@ -53,6 +54,56 @@ func TestResponse_UnmarshalJson(t *testing.T) {
 
 			var got interface{}
 			err := res.UnmarshalJson(&got)
+			assert.Equal(t, tt.want, got)
+			assert.Equal(t, tt.wantError, err)
+		})
+	}
+}
+func TestResponse_UnmarshalXml(t *testing.T) {
+	type data struct {
+		XMLName xml.Name `xml:"foo"`
+		Text    string   `xml:",chardata"`
+		Bar     string   `xml:"bar,attr"`
+	}
+
+	var tests = []struct {
+		name      string
+		input     *http.Response
+		want      data
+		wantError error
+	}{
+		{
+			"empty",
+			&http.Response{
+				Body: io.NopCloser(strings.NewReader(``)),
+			},
+			data{},
+			errors.New("EOF"),
+		},
+		{
+			"object",
+			&http.Response{
+				Body: io.NopCloser(strings.NewReader(`<foo bar="attr">val</foo>`)),
+			},
+			data{
+				XMLName: xml.Name{
+					Local: "foo",
+				},
+				Text: "val",
+				Bar:  "attr",
+			},
+			nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			res := response{
+				response: tt.input,
+			}
+
+			var got data
+			err := res.UnmarshalXml(&got)
 			assert.Equal(t, tt.want, got)
 			assert.Equal(t, tt.wantError, err)
 		})
@@ -278,7 +329,7 @@ func TestResponse_Debug(t *testing.T) {
 				response: tt.input,
 			}
 
-			assert.Equal(t, tt.want, res.Debug())
+			assert.Equal(t, tt.want, string(res.Debug()))
 		})
 	}
 }
